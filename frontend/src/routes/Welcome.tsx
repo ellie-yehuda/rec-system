@@ -1,6 +1,7 @@
 // src/routes/Welcome.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useApi } from "../hooks/useApi";
 
 const cuisines = [
   "British",
@@ -56,6 +57,8 @@ const Welcome: React.FC = () => {
   ]);
   const [wifiRequired, setWifiRequired] = useState<boolean | null>(null);
 
+  const { data, loading, error, doFetch } = useApi('/api/submit');
+
   // navigation handlers
   const nextSlide = () => setSlideIndex((i) => Math.min(i + 1, totalSlides - 1));
   const prevSlide = () => setSlideIndex((i) => Math.max(0, i - 1));
@@ -63,7 +66,6 @@ const Welcome: React.FC = () => {
   // Submit handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Collect everything into one payload and send via fetch POST
     const payload = {
       city,
       nickname,
@@ -72,19 +74,16 @@ const Welcome: React.FC = () => {
       priorities,
       wifiRequired,
     };
-    fetch("http://127.0.0.1:5000/api/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === 'success' && data.user_id) {
-          navigate(`/choose/${data.user_id}`);
-        }
-      })
-      .catch(console.error);
+    doFetch({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
   };
+
+  if (data && data.status === 'success' && data.user_id) {
+    navigate(`/choose/${data.user_id}`);
+  }
 
   // Progress Dots Component
   const ProgressDots = () => (

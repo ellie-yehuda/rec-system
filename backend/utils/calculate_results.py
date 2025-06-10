@@ -1,3 +1,11 @@
+"""
+Script to calculate and evaluate user rating results for restaurant recommendations.
+
+Connects to MongoDB, aggregates user rating statistics, and prints evaluation metrics.
+
+Usage:
+Run as a standalone script to print evaluation results.
+"""
 from pymongo import MongoClient
 import numpy as np
 

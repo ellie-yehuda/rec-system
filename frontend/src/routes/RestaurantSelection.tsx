@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import RestaurantGrid from "@components/RestaurantGrid";
 import type { Restaurant } from "../types";
+import { useApi } from "../hooks/useApi";
 
 type FullRestaurant = Restaurant & {
   image_urls: string[];
@@ -35,84 +36,38 @@ type FullRestaurant = Restaurant & {
 };
 
 const RestaurantSelection: React.FC = () => {
-  const [restaurants, setRestaurants] = useState<FullRestaurant[]>([]);
-  const [selected, setSelected] = useState<FullRestaurant[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>("");
   const navigate = useNavigate();
-  const location = useLocation();
   const { userId } = useParams<{ userId: string }>();
-
-  useEffect(() => {
-    if (!userId) {
-      navigate('/'); // Redirect to welcome if no user_id
-      return;
-    }
-    fetch(`http://127.0.0.1:5000/api/restaurants/${userId}`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Error ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data: FullRestaurant[]) => {
-        const processedData = data.map(r => ({
-          ...r,
-          is_italian: !!r.is_italian,
-          is_asian: !!r.is_asian,
-          is_french: !!r.is_french,
-          is_mediterranean: !!r.is_mediterranean,
-          is_fast_food: !!r.is_fast_food,
-          is_indian: !!r.is_indian,
-          is_seafood: !!r.is_seafood,
-          is_steakhouse: !!r.is_steakhouse,
-          is_middle_eastern: !!r.is_middle_eastern,
-          is_mexican: !!r.is_mexican,
-          is_british: !!r.is_british,
-          is_cafe: !!r.is_cafe,
-          is_vegan_options: !!r.is_vegan_options,
-          is_vegetarian_friendly: !!r.is_vegetarian_friendly,
-          is_gluten_free_options: !!r.is_gluten_free_options,
-          is_price_$: !!r.is_price_$,
-          is_price_$$: !!r.is_price_$$,
-          is_price_$$$: !!r.is_price_$$$,
-          is_price_$$$$: !!r.is_price_$$$$,
-          is_free_wifi: !!r.is_free_wifi,
-        }));
-        console.log("Fetched restaurant data:", processedData);
-        setRestaurants(processedData);
-        console.log("Fetched restaurant IDs:", processedData.map(r => r.id));
-      })
-      .catch(console.error);
-  }, [location.search, navigate, userId]); // Added userId to dependencies
-
-  const toggleSelect = (r: FullRestaurant) => {
-    setSelected((prev) => {
-      const exists = prev.some((x) => x.id === r.id);
-      if (exists) return prev.filter((x) => x.id !== r.id);
-      if (prev.length < 3) return [...prev, r];
-      return prev;
-    });
-  };
-
-  const handleSubmit = async () => {
-    try {
-      await fetch("/api/selection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: selected.map((r) => r.id) }),
-      });
-      navigate(`/rate/${userId}`); // Changed navigation to include userId
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const filteredRestaurants = restaurants.filter((r) =>
-    r.restaurant_name.toLowerCase().includes(searchTerm.toLowerCase())
+  const { data, loading, error } = useApi<{ restaurants: Restaurant[] }>(
+    `/api/restaurants/${userId}`
   );
 
-  // If userId is missing or no restaurants loaded yet, you can show a loading state
-  if (restaurants.length === 0) return <p>Loading restaurants…</p>;
+  const [selected, setSelected] = useState<Restaurant[]>([]);
+
+  const handleToggleSelect = (r: Restaurant) => {
+    setSelected((prev) =>
+      prev.some((pr) => pr.id === r.id)
+        ? prev.filter((pr) => pr.id !== r.id)
+        : [...prev, r]
+    );
+  };
+
+  const { doFetch: submitSelection } = useApi(`/api/submit_selection`);
+
+  const handleSubmit = () => {
+    submitSelection({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        selected_restaurants: selected.map((r) => r.id),
+      }),
+    });
+    navigate(`/home/${userId}`);
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
     <div
@@ -162,10 +117,10 @@ const RestaurantSelection: React.FC = () => {
 
         {/* Restaurant grid */}
         <RestaurantGrid
-          restaurants={filteredRestaurants} // Use filtered restaurants
+          restaurants={data?.restaurants || []}
           selectable
-          selectedIdSet={new Set(selected.map((r) => r.id))}
-          onToggleSelect={toggleSelect}
+          selectedRestaurants={selected}
+          onToggleSelect={handleToggleSelect}
         />
       </div>
     </div>

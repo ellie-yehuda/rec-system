@@ -3,6 +3,14 @@ import React, { useState, useRef } from "react";
 import ImageSlider from "./ImageSlider";
 import type { Restaurant } from "../types";
 
+/**
+ * Props for the RestaurantCard component
+ * 
+ * @property restaurant - Restaurant object with extended properties
+ * @property selectable - Whether the card is selectable
+ * @property selected - Whether the restaurant is currently selected
+ * @property onToggleSelect - Callback when selection state changes
+ */
 interface Props {
   restaurant: Restaurant & {
     image_urls: string[];
@@ -38,6 +46,10 @@ interface Props {
   onToggleSelect?: (r: Restaurant) => void;
 }
 
+/**
+ * Star rating component that displays a rating out of 5 stars.
+ * Supports half stars and handles undefined ratings.
+ */
 const StarRating: React.FC<{ rating?: number }> = ({ rating }) => {
   if (rating === undefined) return <span className="text-gray-400">N/A</span>;
   const fullStars = Math.floor(rating);
@@ -70,7 +82,10 @@ const StarRating: React.FC<{ rating?: number }> = ({ rating }) => {
   );
 };
 
-// FeedbackPopover for compact floating feedback
+/**
+ * Feedback popover component that displays user feedback in a floating tooltip.
+ * Shows sentiment analysis with emojis and feedback counts.
+ */
 const FeedbackPopover: React.FC<{
   feedback: [string, number, number][];
   onOpenChange?: (open: boolean) => void;
@@ -83,11 +98,14 @@ const FeedbackPopover: React.FC<{
     onOpenChange?.(open);
   }, [open, onOpenChange]);
 
+  // Helper function to determine feedback sentiment class
   const getFeedbackClass = (sentiment: number) => {
     if (sentiment > 0.15) return "bg-green-100 text-green-800";
     if (sentiment < -0.15) return "bg-red-100 text-red-700";
     return "bg-blue-100 text-blue-700";
   };
+
+  // Helper function to determine feedback sentiment emoji
   const getFeedbackIcon = (sentiment: number) => {
     if (sentiment > 0.15) return "👍";
     if (sentiment < -0.15) return "👎";
@@ -139,6 +157,10 @@ const FeedbackPopover: React.FC<{
   );
 };
 
+/**
+ * Main RestaurantCard component that displays restaurant information
+ * in a card format with image slider, ratings, and feedback.
+ */
 const RestaurantCard: React.FC<Props> = ({
   restaurant,
   selectable = false,
@@ -147,7 +169,7 @@ const RestaurantCard: React.FC<Props> = ({
 }) => {
   const [isFeedbackPopoverOpen, setIsFeedbackPopoverOpen] = useState(false);
 
-  // Filter and limit feedback to 3 tags
+  // Filter feedback to show only items with 2+ mentions, limited to top 3
   const filteredFeedback = (restaurant.feedback || [])
     .filter((item) => item[1] >= 2)
     .slice(0, 3);
