@@ -1,6 +1,6 @@
 # Restaurant Recommendation System 🍽️
 
-> A smart, AI-powered restaurant discovery platform for European cities
+> A smart restaurant discovery platform for European cities
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-v3.8+-blue.svg)](https://www.python.org/downloads/)
